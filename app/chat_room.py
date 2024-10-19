@@ -15,7 +15,7 @@ def get_response(prompt):
         json={
             'model': 'gpt-4o',  # 確保使用正確的模型
             'messages': [
-                {'role': 'system', 'content': 'You are a helpful assistant.'},
+                {'role': 'system', 'content': '你是羅技娘，作為logitech公司的產品小助手，幫助使用者日常生活提醒與規劃.'},
                 {'role': 'user', 'content': prompt}
             ],
             'temperature': 0.4,
@@ -37,6 +37,11 @@ def send_message(event=None):
         response = get_response(user_input)
         chat_window.insert(tk.END, f"GPT: {response}\n\n")
 
+def initial_message():
+    # 初始啟動時的訊息，顯示模型和助手身份
+    initial_prompt = "我使用的是 gpt-4o 模型，我是羅技娘～，請問有什麼我可以幫忙的？"
+    chat_window.insert(tk.END, f"GPT: {initial_prompt}\n\n")
+
 # 建立視窗
 root = tk.Tk()
 root.title("Chat with GPT")
@@ -55,6 +60,9 @@ entry.bind("<Return>", send_message)
 # 建立發送按鈕
 send_button = tk.Button(root, text="Send", width=10, command=send_message)
 send_button.pack(pady=10)
+
+# 顯示初始訊息
+initial_message()
 
 # 開始 GUI 主循環
 root.mainloop()

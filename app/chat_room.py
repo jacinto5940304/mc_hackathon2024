@@ -1,12 +1,13 @@
 import tkinter as tk
+from tkinter import ttk
 import requests
 from PIL import Image, ImageTk
 from io import BytesIO
-import pyttsx3  # 匯入文字轉語音庫
-import speech_recognition as sr  # 匯入語音識別庫
+import pyttsx3
+import speech_recognition as sr
 import asyncio
 import aiohttp
-import threading  # 匯入執行緒庫
+import threading
 import os
 from google.cloud import vision
 from tkinter import filedialog, messagebox
@@ -86,8 +87,8 @@ def get_response(prompt):
 
         return asyncio.run(run_fetch())
     except Exception as e:
-        print(f"Error fetching response: {e}")  # 打印錯誤信息
-        return {"error": str(e)}  # 返回錯誤信息作為回應
+        print(f"Error fetching response: {e}")
+        return {"error": str(e)}
 
 def generate_image(prompt):
     response = requests.post(
@@ -135,11 +136,9 @@ def record_audio():
         audio = recognizer.listen(source)
 
     try:
-        # 使用Google語音識別將語音轉為文字
         user_input = recognizer.recognize_google(audio, language='zh-TW')
-        print(user_input)
         chat_window.insert(tk.END, f"You: {user_input}\n")
-        send_message(user_input)  # 傳遞語音轉換的文本
+        send_message(user_input)
     except sr.UnknownValueError:
         chat_window.insert(tk.END, "GPT: 語音識別失敗，請再試一次。\n\n")
     except sr.RequestError as e:
@@ -147,40 +146,35 @@ def record_audio():
 
 def send_message(user_input):
     if user_input:
-        # 顯示用戶輸入的訊息
         chat_window.config(state=tk.NORMAL)
         chat_window.insert(tk.END, f"You: {user_input}\n")
         chat_window.config(state=tk.DISABLED)
         
-        # 清空輸入框
         entry.delete(0, tk.END)
 
         response = get_response(user_input)
 
-        # 檢查 response 是否包含錯誤信息
         if 'error' in response:
             chat_window.config(state=tk.NORMAL)
             chat_window.insert(tk.END, f"GPT: 錯誤：{response['error']}\n\n")
             chat_window.config(state=tk.DISABLED)
             return
 
-        # 檢查 response 中是否包含 'choices' 鍵
         if 'choices' in response and len(response['choices']) > 0:
             message_content = response['choices'][0]['message']['content']
             chat_window.config(state=tk.NORMAL)
-            chat_window.insert(tk.END, f"GPT: {message_content}\n\n")  # 先顯示文字
+            chat_window.insert(tk.END, f"GPT: {message_content}\n\n")
             chat_window.config(state=tk.DISABLED)
             
-            # 使用 speak_async 來非阻塞地播放語音
             speak_async(message_content)
 
             if "生成圖片" in message_content:
                 image = generate_image(user_input)
                 if image:
-                    display_image(image)    
+                    display_image(image)
                 else:
                     chat_window.config(state=tk.NORMAL)
-                    chat_window.insert(tk.END, f"GPT: 無法生成圖片，請稍後再試。\n\n")
+                    chat_window.insert(tk.END, "GPT: 無法生成圖片，請稍後再試。\n\n")
                     chat_window.config(state=tk.DISABLED)
         else:
             chat_window.config(state=tk.NORMAL)
@@ -188,16 +182,15 @@ def send_message(user_input):
             chat_window.config(state=tk.DISABLED)
 
 def display_image(image):
-    global generated_image  # 將圖片存入全局變數，供下載功能使用
+    global generated_image
     img = image.resize((250, 250))
     img_tk = ImageTk.PhotoImage(img)
     
     chat_window.image_create(tk.END, image=img_tk)
     chat_window.insert(tk.END, "\n")
-    generated_image = image  # 保存生成的圖片
+    generated_image = image
 
 def download_image():
-    """下載生成的圖片"""
     global generated_image
     if generated_image is not None:
         save_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png"), ("All files", "*.*")])
@@ -218,6 +211,11 @@ def initial_message():
 # 建立視窗
 root = tk.Tk()
 root.title("Chat with GPT")
+# frame=tk.Frame(root,width=100,height=100,cursor="hand2")
+# frame.pack()
+
+# 設定視窗背景顏色
+root.configure(bg="#2e2e2e")
 
 # 使用 grid 佈局
 root.columnconfigure(1, weight=1)
@@ -232,31 +230,33 @@ scrollbar = tk.Scrollbar(root)
 scrollbar.grid(row=0, column=2, sticky="ns")
 
 # 建立聊天窗口並綁定滾動條
-chat_window = tk.Text(root, bd=1, bg="white", width=50, height=8, yscrollcommand=scrollbar.set)
+chat_window = tk.Text(root, bd=1, bg="#1c1c1c", fg="white", width=50, height=8, yscrollcommand=scrollbar.set)
 chat_window.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 scrollbar.config(command=chat_window.yview)
 
 # 建立用戶輸入框
-entry = tk.Entry(root, bd=1, bg="white", width=50)
+entry = tk.Entry(root, bd=1, bg="#2b2b2b", fg="white", insertbackground="white")
 entry.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
 
 entry.bind("<Return>", lambda event: send_message(entry.get()))
 
+# 建立按鈕樣式，讓按鈕有圓滑和艷色
+button_style = {"bg": "#4a4a4a", "fg": "white", "activebackground": "#606060", "cursor":"hand2" ,"activeforeground": "white", "bd": 0, "highlightthickness": 0}
 
 # 建立發送按鈕
-send_button = tk.Button(root, text="Send", width=10, command=lambda: send_message(entry.get()))
+send_button = tk.Button(root, text="Send", **button_style, command=lambda: send_message(entry.get()))
 send_button.grid(row=1, column=2, padx=10, pady=10)
 
 # 建立錄音按鈕
-record_button = tk.Button(root, text="錄音", width=10, command=record_audio)
+record_button = tk.Button(root, text="錄音", **button_style, command=record_audio)
 record_button.grid(row=2, column=2, padx=10, pady=10)
 
 # 上傳圖片按鈕
-upload_button = tk.Button(root, text="上傳圖片", width=10, command=upload_and_analyze_image)
+upload_button = tk.Button(root, text="上傳圖片", **button_style, command=upload_and_analyze_image)
 upload_button.grid(row=3, column=2, padx=10, pady=10)
 
 # 下載圖片按鈕
-download_button = tk.Button(root, text="下載圖片", width=10, command=download_image)
+download_button = tk.Button(root, text="下載圖片", **button_style, command=download_image)
 download_button.grid(row=4, column=2, padx=10, pady=10)
 
 # 顯示初始訊息

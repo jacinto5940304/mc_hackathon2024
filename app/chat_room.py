@@ -1,18 +1,25 @@
 import tkinter as tk
 from tkinter import ttk
 import requests
+
 from PIL import Image, ImageTk
 from io import BytesIO
+
 import pyttsx3
 import speech_recognition as sr
 import asyncio
 import aiohttp
+
 import threading
 import os
+import json
+
 from google.cloud import vision
 from tkinter import filedialog, messagebox
+
 from vpet import Vpet
-import json
+from WeatherService import weather_service
+
 
 # 你的 OpenAI API Key
 api_key = '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'
@@ -29,9 +36,7 @@ generated_image = None
 conversation_history = []
 
 
-# 在聊天開始時加載之前的對話記錄
-import os
-import json
+
 
 def load_conversation_history():
     global conversation_history
@@ -172,11 +177,11 @@ def get_response(prompt):
             function_call = response['choices'][0]['message']['function_call']
             if function_call['name'] == 'get_weather':
                 city = json.loads(function_call['arguments'])['city']
-                weather_info = get_weather(city)
+                weather_info = weather_service.get_weather(city)
                 return f"羅技娘偷偷告訴你：{weather_info} ><"  # 返回天氣資訊
             elif function_call['name'] == 'get_weather_forecast':
                 city = json.loads(function_call['arguments'])['city']
-                forecast_info = get_weather_forecast(city)
+                forecast_info = weather_service.get_weather_forecast(city)
                 return f"羅技娘偷偷告訴你：{forecast_info} ><"  # 返回天氣預報
         else:
             # 返回正常的聊天回應
@@ -185,27 +190,6 @@ def get_response(prompt):
     except Exception as e:
         print(f"Error fetching response: {e}")
         return {"error": str(e)}
-    
-def get_weather(city):
-    api_key = weather_api_key  # 替換為你的 API 密鑰
-    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        return f"城市: {data['name']}, 溫度: {data['main']['temp']}°C, 天氣: {data['weather'][0]['description']}"
-    else:
-        return f"無法取得 {city} 的天氣資訊"
-
-def get_weather_forecast(city):
-    api_key = weather_api_key  # 替換為你的 API 密鑰
-    url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={api_key}&units=metric"
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        forecast = data['list'][:5]  # 只取得未來5天的預報
-        return "\n".join([f"日期: {item['dt_txt']}, 溫度: {item['main']['temp']}°C, 天氣: {item['weather'][0]['description']}" for item in forecast])
-    else:
-        return f"無法取得 {city} 的天氣預報"
 
 def generate_image(prompt):
     try:

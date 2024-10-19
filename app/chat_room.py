@@ -31,20 +31,12 @@ import json
 
 def load_conversation_history():
     global conversation_history
-    if os.path.exists('conversation_history.json'):
-        try:
-            with open('./src/conversation_history.json', 'r') as file:
-                # 檢查檔案是否有內容
-                if os.path.getsize('conversation_history.json') > 0:
-                    conversation_history = json.load(file)
-                    for entry in conversation_history:
-                        chat_window.insert(tk.END, f"{entry['role']}: {entry['content']}\n")
-                else:
-                    conversation_history = []
-        except json.JSONDecodeError:
-            # 如果檔案無法解析，初始化空對話歷史
-            conversation_history = []
-    else:
+    try:
+        with open('./src/conversation_history.json', 'r') as file:
+            conversation_history = json.load(file)
+            for entry in conversation_history:
+                chat_window.insert(tk.END, f"{entry['role']}: {entry['content']}\n")
+    except FileNotFoundError:
         conversation_history = []
 
 # 在每次有新對話後保存記錄

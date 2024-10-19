@@ -15,7 +15,7 @@ from vpet import Vpet
 import json
 
 # 設定 Google Cloud Vision API 憑證
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'src\\silver-theme-439105-i6-ac61c12c257b.json'
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = './src/silver-theme-439105-i6-ac61c12c257b.json'
 client = vision.ImageAnnotatorClient()
 
 # 儲存生成的圖片以便下載
@@ -33,7 +33,7 @@ def load_conversation_history():
     global conversation_history
     if os.path.exists('conversation_history.json'):
         try:
-            with open('conversation_history.json', 'r') as file:
+            with open('./src/conversation_history.json', 'r') as file:
                 # 檢查檔案是否有內容
                 if os.path.getsize('conversation_history.json') > 0:
                     conversation_history = json.load(file)
@@ -49,7 +49,7 @@ def load_conversation_history():
 
 # 在每次有新對話後保存記錄
 def save_conversation_history():
-    with open('conversation_history.json', 'w') as file:
+    with open('./src/conversation_history.json', 'w') as file:
         json.dump(conversation_history, file)
 
 def analyze_image(image_path):

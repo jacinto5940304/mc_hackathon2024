@@ -13,8 +13,11 @@ import os
 import json
 from google.cloud import vision
 from tkinter import filedialog, messagebox
+
+
 from vpet import Vpet
 from WeatherService import weather_service
+from TutorialApp import TutorialApp
 
 # 你的 OpenAI API Key
 api_key = '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'
@@ -29,6 +32,7 @@ generated_image = None
 
 # memory recorder
 conversation_history = []
+
 
 def load_conversation_history():
     global conversation_history
@@ -375,7 +379,21 @@ def bind_keys():
     root.bind('<s>', lambda event: download_image())  # 按下S鍵
     root.bind('<r>', lambda event: record_audio())  # 按下S鍵
 
+
+def show_next_hint():
+    global current_hint_index
+    current_hint_index = (current_hint_index + 1) % len(hints)  # 切換到下一頁
+    hint_text.set(hints[current_hint_index])  # 更新提示框中的文字
+
 if __name__ == "__main__":
+    # 提示框的頁面內容
+    hints = [
+        "press 'u' to upload file\npress 'd' to download file",
+        "pree 'i' to text message\npress 'r' to record sound。",
+        "這是提示頁面 3 的內容。"
+    ]
+    # 當前頁面的索引
+    current_hint_index = 0
     
     root = tk.Tk()
     root.title("Chat with GPT")
@@ -439,6 +457,9 @@ if __name__ == "__main__":
     # 下載圖片按鈕
     download_button = tk.Button(button_frame, text="下載圖片", **button_style, command=download_image)
     download_button.grid(row=0, column=3, padx=5, pady=5)
+
+    # 左下角提示框
+    tutorial_app = TutorialApp(root)
 
     # update past text
     load_conversation_history()

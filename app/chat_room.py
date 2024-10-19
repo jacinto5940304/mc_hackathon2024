@@ -12,6 +12,7 @@ import os
 from google.cloud import vision
 from tkinter import filedialog, messagebox
 from vpet import Vpet
+import json
 
 # 設定 Google Cloud Vision API 憑證
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'src\\silver-theme-439105-i6-ac61c12c257b.json'
@@ -22,6 +23,34 @@ generated_image = None
 
 # memory recorder
 conversation_history = []
+
+
+# 在聊天開始時加載之前的對話記錄
+import os
+import json
+
+def load_conversation_history():
+    global conversation_history
+    if os.path.exists('conversation_history.json'):
+        try:
+            with open('conversation_history.json', 'r') as file:
+                # 檢查檔案是否有內容
+                if os.path.getsize('conversation_history.json') > 0:
+                    conversation_history = json.load(file)
+                    for entry in conversation_history:
+                        chat_window.insert(tk.END, f"{entry['role']}: {entry['content']}\n")
+                else:
+                    conversation_history = []
+        except json.JSONDecodeError:
+            # 如果檔案無法解析，初始化空對話歷史
+            conversation_history = []
+    else:
+        conversation_history = []
+
+# 在每次有新對話後保存記錄
+def save_conversation_history():
+    with open('conversation_history.json', 'w') as file:
+        json.dump(conversation_history, file)
 
 def analyze_image(image_path):
     """使用 Google Cloud Vision API 分析圖片，並返回描述。"""
@@ -76,10 +105,7 @@ async def fetch_response(session, prompt):
         },
         json={
             'model': 'gpt-4o',
-            'messages': [
-                {'role': 'system', 'content': '你是羅技娘，作為logitech公司的產品小助手，幫助使用者日常生活提醒與規劃。根據使用者的輸入，你需要決定是否生成一張圖片。如果需要生成圖片，請返回 "生成圖片"，否則只需提供文本回應。'},
-                {'role': 'user', 'content': prompt}
-            ],
+            'messages': conversation_history,
             'temperature': 0.5,
             'max_tokens': 300
         }
@@ -91,6 +117,10 @@ async def fetch_response(session, prompt):
 
 def get_response(prompt):
     try:
+        # 將用戶的輸入加入對話歷史
+        conversation_history.append({'role': 'user', 'content': prompt})
+        save_conversation_history()
+
         async def run_fetch():
             async with aiohttp.ClientSession() as session:
                 return await fetch_response(session, prompt)
@@ -175,7 +205,12 @@ def send_message(user_input):
             chat_window.config(state=tk.NORMAL)
             chat_window.insert(tk.END, f"GPT: {message_content}\n\n")
             chat_window.config(state=tk.DISABLED)
-            
+
+            # 將 GPT 回覆保存到記憶變量
+            conversation_history.append({'role': 'assistant', 'content': message_content})
+
+            # 儲存到文件
+            save_conversation_history()
             speak_async(message_content)
 
             if "生成圖片" in message_content:
@@ -221,57 +256,76 @@ def initial_message():
     chat_window.insert(tk.END, f"GPT: {initial_prompt}\n\n")
     speak_async(initial_prompt)
 
-# 建立視窗
-root = tk.Tk()
-root.title("Chat with GPT")
+if __name__ == "__main__":
+    
+    root = tk.Tk()
+    root.title("Chat with GPT")
+    # 設定視窗背景顏色
+    root.configure(bg="white")
 
-# 設定視窗背景顏色
-root.configure(bg="white")
+    # 設置視窗為最上方
+    root.attributes('-topmost', True)
 
-# 使用 grid 佈局
-root.columnconfigure(1, weight=1)
-root.rowconfigure(0, weight=1)
+    # 使用 grid 佈局
+    root.columnconfigure(1, weight=1)
+    root.rowconfigure(0, weight=1)
 
-# 添加 Vpet 在最左側
-vpet_viewer = Vpet(root, "./src/vpet.gif")
-vpet_viewer.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+    # 添加 Vpet 在最左側
+    vpet_viewer = Vpet(root, "./src/vpet.gif")
+    vpet_viewer.grid(row=0, column=0, padx=8, pady=8, sticky="nsew")
 
-# 添加滾動條
-scrollbar = tk.Scrollbar(root)
-scrollbar.grid(row=0, column=2, sticky="ns")
+    # 添加滾動條
+    scrollbar = tk.Scrollbar(root)
+    scrollbar.grid(row=0, column=2, sticky="ns")
 
-# 建立聊天窗口並綁定滾動條
-chat_window = tk.Text(root, bd=1, bg="white", fg="black", width=50, height=8, yscrollcommand=scrollbar.set)
-chat_window.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
-scrollbar.config(command=chat_window.yview)
+    # 建立聊天窗口並綁定滾動條
+    chat_window = tk.Text(root, bd=1, bg="white", fg="black", width=50, height=8, yscrollcommand=scrollbar.set)
+    chat_window.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+    scrollbar.config(command=chat_window.yview)
 
-# 建立用戶輸入框
-entry = tk.Entry(root, bd=1, bg="white", fg="black", insertbackground="black")
-entry.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
+    # 建立用戶輸入框
+    entry = tk.Entry(root, bd=1, bg="white", fg="black", insertbackground="black")
+    entry.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
 
-entry.bind("<Return>", lambda event: send_message(entry.get()))
+    # 綁定回車鍵以發送消息
+    entry.bind("<Return>", lambda event: send_message(entry.get()))
 
-# 建立按鈕樣式，讓按鈕有圓滑和艷色
-button_style = {"bg": "#e6e6e6", "fg": "black", "activebackground": "#d1d1d1", "cursor": "hand2", "activeforeground": "black", "bd": 0, "highlightthickness": 0}
+    # 建立按鈕樣式，讓按鈕有圓滑和艷色
+    button_style = {
+        "bg": "#e6e6e6",
+        "fg": "black",
+        "activebackground": "#d1d1d1",
+        "cursor": "hand2",
+        "activeforeground": "black",
+        "bd": 0,
+        "highlightthickness": 0
+    }
 
-# 建立發送按鈕
-send_button = tk.Button(root, text="Send", **button_style, command=lambda: send_message(entry.get()))
-send_button.grid(row=1, column=2, padx=10, pady=10)
+    # 將所有按鈕放在同一行
+    button_frame = tk.Frame(root, bg="white")  # 新增框架以容納按鈕
+    button_frame.grid(row=2, column=1, padx=10, pady=5, sticky="ew")  # 按鈕框架位置
 
-# 建立錄音按鈕
-record_button = tk.Button(root, text="錄音", **button_style, command=record_audio)
-record_button.grid(row=2, column=2, padx=10, pady=10)
+    # 建立發送按鈕
+    send_button = tk.Button(button_frame, text="Send", **button_style, command=lambda: send_message(entry.get()))
+    send_button.grid(row=0, column=0, padx=5, pady=5)
 
-# 上傳圖片按鈕
-upload_button = tk.Button(root, text="上傳圖片", **button_style, command=upload_and_analyze_image)
-upload_button.grid(row=3, column=2, padx=10, pady=10)
+    # 建立錄音按鈕
+    record_button = tk.Button(button_frame, text="錄音", **button_style, command=record_audio)
+    record_button.grid(row=0, column=1, padx=5, pady=5)
 
-# 下載圖片按鈕
-download_button = tk.Button(root, text="下載圖片", **button_style, command=download_image)
-download_button.grid(row=4, column=2, padx=10, pady=10)
+    # 上傳圖片按鈕
+    upload_button = tk.Button(button_frame, text="上傳圖片", **button_style, command=upload_and_analyze_image)
+    upload_button.grid(row=0, column=2, padx=5, pady=5)
 
-# 顯示初始訊息
-initial_message()
+    # 下載圖片按鈕
+    download_button = tk.Button(button_frame, text="下載圖片", **button_style, command=download_image)
+    download_button.grid(row=0, column=3, padx=5, pady=5)
 
-# 開始 GUI 主循環
-root.mainloop()
+    # update past text
+    load_conversation_history()
+
+    # 顯示初始訊息
+    initial_message()
+
+    # 開始 GUI 主循環
+    root.mainloop()

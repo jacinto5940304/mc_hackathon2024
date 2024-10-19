@@ -2,7 +2,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 class Vpet(tk.Label):
-    def __init__(self, master, gif_path, size=(100,100), delay=5):
+    def __init__(self, master, gif_path, size=(250,250), delay=5):
         super().__init__(master)
         self.master = master
         self.delay = delay  # Delay in milliseconds between frames

@@ -7,32 +7,34 @@ from io import BytesIO
 api_key = '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'
 
 def get_response(prompt):
-    # 判斷用戶是否要求生成圖片
-    if "畫" in prompt or "圖片" in prompt:
-        return generate_image(prompt)
-    else:
-        # 發送 API 請求並返回結果
-        response = requests.post(
-            'https://api.openai.com/v1/chat/completions',
-            headers={
-                'Content-Type': 'application/json',
-                'Authorization': f'Bearer {api_key}'
-            },
-            json={
-                'model': 'gpt-4o',  # 確保使用正確的模型
-                'messages': [
-                    {'role': 'system', 'content': '你是羅技娘，作為logitech公司的產品小助手，幫助使用者日常生活提醒與規劃.'},
-                    {'role': 'user', 'content': prompt}
-                ],
-                'temperature': 0.4,
-                'max_tokens': 300
-            }
-        )
+    # 發送 API 請求並返回結果
+    response = requests.post(
+        'https://api.openai.com/v1/chat/completions',
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {api_key}'
+        },
+        json={
+            'model': 'gpt-4o',  # 確保使用正確的模型
+            'messages': [
+                {'role': 'system', 'content': '你是羅技娘，作為logitech公司的產品小助手，幫助使用者日常生活提醒與規劃。根據使用者的輸入，你需要決定是否生成一張圖片。如果需要生成圖片，請返回 "生成圖片"，否則只需提供文本回應。'},
+                {'role': 'user', 'content': prompt}
+            ],
+            'temperature': 0.5,
+            'max_tokens': 300
+        }
+    )
+    
+    if response.status_code == 200:
+        message_content = response.json()['choices'][0]['message']['content']
         
-        if response.status_code == 200:
-            return response.json()['choices'][0]['message']['content']
+        # 判斷是否返回的是生成圖片的指示
+        if "生成圖片" in message_content:
+            return "image"
         else:
-            return f"Error: {response.status_code}"
+            return message_content
+    else:
+        return f"Error: {response.status_code}"
 
 def generate_image(prompt):
     # 發送請求給OpenAI的DALL·E API
@@ -63,14 +65,15 @@ def send_message(event=None):
         chat_window.insert(tk.END, f"You: {user_input}\n")
         entry.delete(0, tk.END)
         
-        if "畫" in user_input or "圖片" in user_input:
-            image = get_response(user_input)
+        # 根據回應來判斷是否生成圖片
+        response = get_response(user_input)
+        if response == "image":
+            image = generate_image(user_input)
             if image:
                 display_image(image)
             else:
                 chat_window.insert(tk.END, f"GPT: 無法生成圖片，請稍後再試。\n\n")
         else:
-            response = get_response(user_input)
             chat_window.insert(tk.END, f"GPT: {response}\n\n")
 
 def display_image(image):

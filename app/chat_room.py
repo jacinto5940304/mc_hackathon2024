@@ -133,6 +133,12 @@ async def fetch_response(session, prompt):
                                 "city"
                             ]
                         }
+                    },
+                    {
+                        "name": "delete_memory",
+                        "description": "user wanna delete the chatting memory",
+                        "strict": False,
+                        "parameters": {}
                     }
         
                 ],
@@ -177,6 +183,9 @@ def get_response(prompt):
                 city = json.loads(function_call['arguments'])['city']
                 forecast_info = weather_service.get_weather_forecast(city)
                 return f"羅技娘偷偷告訴你：{forecast_info} ><"  # 返回天氣預報
+            elif function_call['name'] == 'delete_memory':
+                delete_memory()  # 呼叫刪除函數
+                return "所有聊天紀錄已刪除。"
         else:
             # 返回正常的聊天回應
             return response['choices'][0]['message']['content']
@@ -184,6 +193,23 @@ def get_response(prompt):
     except Exception as e:
         print(f"Error fetching response: {e}")
         return {"error": str(e)}
+
+def delete_memory():
+    """刪除聊天紀錄的 JSON 檔案。"""
+    try:
+        if os.path.exists('./src/conversation_history.json'):
+            os.remove('./src/conversation_history.json')
+            global conversation_history
+            conversation_history = []  # 清空內存中的對話歷史
+            print("聊天紀錄已成功刪除。")
+            # 清空聊天視窗中的內容
+            chat_window.config(state=tk.NORMAL)  # 解鎖聊天窗口使其可編輯
+            chat_window.delete(1.0, tk.END)  # 刪除視窗中所有文字
+            chat_window.config(state=tk.DISABLED)  # 再次將聊天窗口設為不可編輯
+        else:
+            print("沒有發現聊天紀錄檔案。")
+    except Exception as e:
+        print(f"刪除聊天紀錄時出現錯誤: {e}")
 
 def generate_image(prompt):
 
@@ -208,9 +234,8 @@ def generate_image(prompt):
         print(f"圖片生成失敗，狀態碼: {response.status_code}, 回應: {response.text}")
         return None
 
-
+engine = pyttsx3.init()
 def speak(text):
-    engine = pyttsx3.init()
     engine.setProperty('rate', 200)  # 設定語速
     engine.setProperty('volume', 1)  # 設定音量
     
@@ -226,7 +251,9 @@ def speak(text):
 
 # 使用 threading 讓語音播放在背景執行
 def speak_async(text):
-    threading.Thread(target=speak, args=(text,)).start()
+    global speak_thread
+    speak_thread = threading.Thread(target=speak, args=(text,))
+    speak_thread.start()    
 
 def open_input_dialog():
     """彈出一個對話框來讓用戶輸入文本"""
@@ -248,6 +275,15 @@ def record_audio():
         chat_window.insert(tk.END, "GPT: 語音識別失敗，請再試一次。\n\n")
     except sr.RequestError as e:
         chat_window.insert(tk.END, f"GPT: 無法連接到語音識別服務; {e}\n\n")
+
+def on_closing():
+    """當關閉應用程式時，停止所有語音播放並正確退出。"""
+    global speak_thread  # 追踪語音播放的執行緒
+    engine.stop()  # 停止 pyttsx3 引擎
+    if speak_thread.is_alive():  # 檢查語音播放的執行緒是否仍在運行
+        speak_thread.join(timeout=1)  # 等待執行緒結束
+    root.quit()  # 結束主循環
+    root.destroy()  # 關閉應用程式視窗
 
 
 def process_response(response):
@@ -412,6 +448,9 @@ if __name__ == "__main__":
 
     # 顯示初始訊息
     initial_message()
+
+    # 當關閉應用程式時，執行 on_closing
+    root.protocol("WM_DELETE_WINDOW", on_closing)
 
     # 開始 GUI 主循環
     root.mainloop()

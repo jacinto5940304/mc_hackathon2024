@@ -2,7 +2,7 @@ import tkinter as tk
 import requests
 
 # 你的 OpenAI API Key
-api_key = 'your-api-key'
+api_key = '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'
 
 def get_response(prompt):
     # 發送 API 請求並返回結果

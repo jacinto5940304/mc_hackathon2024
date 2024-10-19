@@ -13,7 +13,7 @@ from tkinter import filedialog, messagebox
 from vpet import Vpet
 
 # 設定 Google Cloud Vision API 憑證
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'C:\\Users\\david\\OneDrive\\桌面\\mc hackathon\\mc_hackathon2024\\app\\silver-theme-439105-i6-ac61c12c257b.json'
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'src\silver-theme-439105-i6-ac61c12c257b.json'
 client = vision.ImageAnnotatorClient()
 
 # 儲存生成的圖片以便下載
@@ -177,7 +177,7 @@ def send_message(user_input):
             if "生成圖片" in message_content:
                 image = generate_image(user_input)
                 if image:
-                    display_image(image)
+                    display_image(image)    
                 else:
                     chat_window.config(state=tk.NORMAL)
                     chat_window.insert(tk.END, f"GPT: 無法生成圖片，請稍後再試。\n\n")
@@ -239,6 +239,9 @@ scrollbar.config(command=chat_window.yview)
 # 建立用戶輸入框
 entry = tk.Entry(root, bd=1, bg="white", width=50)
 entry.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
+
+entry.bind("<Return>", lambda event: send_message(entry.get()))
+
 
 # 建立發送按鈕
 send_button = tk.Button(root, text="Send", width=10, command=lambda: send_message(entry.get()))

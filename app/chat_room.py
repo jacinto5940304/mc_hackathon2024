@@ -1,25 +1,20 @@
 import tkinter as tk
 from tkinter import ttk
 import requests
-
 from PIL import Image, ImageTk
 from io import BytesIO
-
 import pyttsx3
 import speech_recognition as sr
 import asyncio
 import aiohttp
-
+from tkinter import simpledialog
 import threading
 import os
 import json
-
 from google.cloud import vision
 from tkinter import filedialog, messagebox
-
 from vpet import Vpet
 from WeatherService import weather_service
-
 
 # 你的 OpenAI API Key
 api_key = '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'
@@ -34,9 +29,6 @@ generated_image = None
 
 # memory recorder
 conversation_history = []
-
-
-
 
 def load_conversation_history():
     global conversation_history
@@ -236,6 +228,12 @@ def speak(text):
 def speak_async(text):
     threading.Thread(target=speak, args=(text,)).start()
 
+def open_input_dialog():
+    """彈出一個對話框來讓用戶輸入文本"""
+    prompt = simpledialog.askstring("輸入提示", "請輸入您的Prompt:")
+    if prompt:
+        send_message(prompt)  # 使用者輸入的內容會被傳遞到 send_message 函數
+
 def record_audio():
     recognizer = sr.Recognizer()
     with sr.Microphone() as source:
@@ -305,8 +303,6 @@ def send_message(user_input):
                 chat_window.config(state=tk.DISABLED)
 
 
-
-
 def display_image(image):
     global generated_image, image_reference  # 儲存圖片的引用
     img = image.resize((250, 250))
@@ -335,6 +331,13 @@ def initial_message():
     initial_prompt = "我使用的是 gpt-4o 模型，我是羅技娘～，請問有什麼我可以幫忙的？"
     chat_window.insert(tk.END, f"GPT: {initial_prompt}\n\n")
     speak_async(initial_prompt)
+
+# 新增功能：綁定按鍵
+def bind_keys():
+    root.bind('<i>', lambda event: open_input_dialog())  # 按下I鍵
+    root.bind('<u>', lambda event: upload_and_analyze_image())  # 按下U鍵
+    root.bind('<s>', lambda event: download_image())  # 按下S鍵
+    root.bind('<r>', lambda event: record_audio())  # 按下S鍵
 
 if __name__ == "__main__":
     
@@ -403,6 +406,9 @@ if __name__ == "__main__":
 
     # update past text
     load_conversation_history()
+
+    # 綁定按鍵
+    bind_keys()
 
     # 顯示初始訊息
     initial_message()

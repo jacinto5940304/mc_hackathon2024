@@ -102,7 +102,9 @@ async def fetch_response(session, prompt):
             },
             json={
                 'model': 'gpt-4o',
-                'messages': conversation_history,
+                'messages': [
+                    {'role': 'system', 'content': '你是羅技娘，作為logitech公司的產品小助手，幫助使用者日常生活提醒與規劃。根據使用者的輸入，你需要決定是否生成一張圖片。如果需要生成圖片，請返回 "生成圖片"，否則只需提供文本回應。'},
+                ] + [{'role': entry['role'], 'content': entry['content']} for entry in conversation_history],
                 'temperature': 0.5,
                 'max_tokens': 300,
                 'functions': [
@@ -192,44 +194,43 @@ def get_response(prompt):
         return {"error": str(e)}
 
 def generate_image(prompt):
-    try:
-        response = requests.post(
-            'https://api.openai.com/v1/images/generations',
-            headers={
-                'Content-Type': 'application/json',
-                'Authorization': f'Bearer {api_key}'
-            },
-            json={
-                'prompt': prompt,
-                'n': 1,
-                'size': '1024x1024'
-            }
-        )
-        
-        if response.status_code == 200:
-            image_url = response.json()['data'][0]['url']
-            image_data = requests.get(image_url).content
-            return Image.open(BytesIO(image_data))
-        else:
-            print(f"圖片生成失敗，狀態碼: {response.status_code}, 回應: {response.text}")
-            return None
-    except Exception as e:
-        print(f"圖片生成過程中發生錯誤: {e}")
+
+    response = requests.post(
+        'https://api.openai.com/v1/images/generations',
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {api_key}'
+        },
+        json={
+            'prompt': prompt,
+            'n': 1,
+            'size': '1024x1024'
+        }
+    )
+    
+    if response.status_code == 200:
+        image_url = response.json()['data'][0]['url']
+        image_data = requests.get(image_url).content
+        return Image.open(BytesIO(image_data))
+    else:
+        print(f"圖片生成失敗，狀態碼: {response.status_code}, 回應: {response.text}")
         return None
+
 
 def speak(text):
     engine = pyttsx3.init()
-    engine.setProperty('rate', 200)
-    engine.setProperty('volume', 1)
+    engine.setProperty('rate', 200)  # 設定語速
+    engine.setProperty('volume', 1)  # 設定音量
     
     voices = engine.getProperty('voices')
     for voice in voices:
-        if 'female' in voice.name.lower():
+        if 'female' in voice.name.lower():  # 選擇女性聲音
             engine.setProperty('voice', voice.id)
             break
     
     engine.say(text)
     engine.runAndWait()
+    
 
 # 使用 threading 讓語音播放在背景執行
 def speak_async(text):
@@ -302,6 +303,7 @@ def send_message(user_input):
                 chat_window.config(state=tk.NORMAL)
                 chat_window.insert(tk.END, "GPT: 無法生成圖片，請稍後再試。\n\n")
                 chat_window.config(state=tk.DISABLED)
+
 
 
 

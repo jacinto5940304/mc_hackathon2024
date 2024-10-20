@@ -15,6 +15,7 @@ from google.cloud import vision
 from tkinter import filedialog, messagebox
 
 
+
 from vpet import Vpet
 from WeatherService import weather_service
 from TutorialApp import TutorialApp

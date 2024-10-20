@@ -15,7 +15,6 @@ from google.cloud import vision
 from tkinter import filedialog, messagebox
 
 
-
 from vpet import Vpet
 from WeatherService import weather_service
 from TutorialApp import TutorialApp
@@ -489,3 +488,175 @@ if __name__ == "__main__":
 
     # 開始 GUI 主循環
     root.mainloop()
+
+
+
+
+# 調整滑鼠 DPI，AI 自動查找滑鼠 ID
+def adjust_mouse_dpi(dpi_value):
+    async def run():
+        mouse_id = await find_device_id("mouse")
+        if mouse_id:
+            print(f"找到滑鼠 ID: {mouse_id}")
+            command = {
+                "verb": "set",
+                "path": "dpi",
+                "args": {
+                    "unitId": mouse_id,
+                    "value": dpi_value
+                }
+            }
+            await logidevmon.send_ws_msg(command)
+        else:
+            print("未找到滑鼠")
+    
+    asyncio.run(run())
+
+
+
+# unused
+
+
+# {
+#     'functions': [
+#         {
+#             "name": "adjust_mouse_dpi",
+#             "description": "Adjust the DPI setting of the mouse.",
+#             "parameters": {
+#                 "type": "object",
+#                 "properties": {
+#                     "device_id": {"type": "integer", "description": "The ID of the mouse device."},
+#                     "dpi_value": {"type": "integer", "description": "The desired DPI value."}
+#                 },
+#                 "required": ["device_id", "dpi_value"]
+#             }
+#         },
+#         {
+#             "name": "set_keyboard_shortcut",
+#             "description": "Set a keyboard shortcut on the Logitech device.",
+#             "parameters": {
+#                 "type": "object",
+#                 "properties": {
+#                     "device_id": {"type": "integer", "description": "The ID of the keyboard device."},
+#                     "key": {"type": "string", "description": "The key to bind."},
+#                     "action": {"type": "string", "description": "The action to bind to the key."}
+#                 },
+#                 "required": ["device_id", "key", "action"]
+#             }
+#         }
+#     ]
+# }
+
+
+# # 調整滑鼠 DPI，AI 自動查找滑鼠 ID
+# def adjust_mouse_dpi(dpi_value):
+#     async def run():
+#         mouse_id = await find_device_id("mouse")
+#         if mouse_id:
+#             print(f"找到滑鼠 ID: {mouse_id}")
+#             command = {
+#                 "verb": "set",
+#                 "path": "dpi",
+#                 "args": {
+#                     "unitId": mouse_id,
+#                     "value": dpi_value
+#                 }
+#             }
+#             await logidevmon.send_ws_msg(command)
+#         else:
+#             print("未找到滑鼠")
+    
+#     asyncio.run(run())
+
+# # 設定鍵盤快捷鍵，AI 自動查找鍵盤 ID
+# def set_keyboard_shortcut(key, action):
+#     async def run():
+#         keyboard_id = await find_device_id("keyboard")
+#         if keyboard_id:
+#             print(f"找到鍵盤 ID: {keyboard_id}")
+#             command = {
+#                 "verb": "set",
+#                 "path": "specialKeyConfig",
+#                 "args": {
+#                     "unitId": keyboard_id,
+#                     "controlId": key,
+#                     "action": action
+#                 }
+#             }
+#             await logidevmon.send_ws_msg(command)
+#         else:
+#             print("未找到鍵盤")
+    
+#     asyncio.run(run())
+
+# # 檢查裝置狀態
+# def check_device_status(device_type):
+#     async def run():
+#         device_id = await find_device_id(device_type)
+#         if device_id:
+#             command = {
+#                 "verb": "get",
+#                 "path": "device",
+#                 "args": {
+#                     "unitId": device_id
+#                 }
+#             }
+#             device_status = await logidevmon.send_ws_msg(command)
+#             print(f"{device_type.capitalize()} 狀態: {device_status}")
+#         else:
+#             print(f"未找到 {device_type}")
+    
+#     asyncio.run(run())
+
+
+# # 設定鍵盤快捷鍵，AI 自動查找鍵盤 ID
+# def set_keyboard_shortcut(key, action):
+#     async def run():
+#         keyboard_id = await find_device_id("keyboard")
+#         if keyboard_id:
+#             print(f"找到鍵盤 ID: {keyboard_id}")
+#             command = {
+#                 "verb": "set",
+#                 "path": "specialKeyConfig",
+#                 "args": {
+#                     "unitId": keyboard_id,
+#                     "controlId": key,
+#                     "action": action
+#                 }
+#             }
+#             await logidevmon.send_ws_msg(command)
+#         else:
+#             print("未找到鍵盤")
+    
+#     asyncio.run(run())
+
+# # 檢查裝置狀態
+# def check_device_status(device_type):
+#     async def run():
+#         device_id = await find_device_id(device_type)
+#         if device_id:
+#             command = {
+#                 "verb": "get",
+#                 "path": "device",
+#                 "args": {
+#                     "unitId": device_id
+#                 }
+#             }
+#             device_status = await logidevmon.send_ws_msg(command)
+#             print(f"{device_type.capitalize()} 狀態: {device_status}")
+#         else:
+#             print(f"未找到 {device_type}")
+    
+#     asyncio.run(run())
+
+# async def find_device_id(device_type):
+#     command = {
+#         "verb": "get",
+#         "path": "devices"
+#     }
+#     devices = await logidevmon.send_ws_msg(command)
+    
+#     for device in devices.get("value", []):
+#         if device["type"] == device_type:  # 根據裝置類型來篩選 (例如 'mouse' 或 'keyboard')
+#             return device["unitId"]
+#     return None

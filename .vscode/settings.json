@@ -1,6 +1,0 @@
-{
-    "python.defaultInterpreterPath": "/opt/miniconda3/bin/python",
-    "files.associations": {
-        "*.c#": "aspnetcorerazor"
-    }
-}

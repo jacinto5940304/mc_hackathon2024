@@ -43,9 +43,11 @@ def load_conversation_history():
         #     conversation_history = json.load(file)
         #     for entry in conversation_history:
         #         chat_window.insert(tk.END, f"{entry['role']}: {entry['content']}\n")
-        with open('./src/conversation.json', 'r') as file:
+        with open('./src/conversation_history.json', 'r') as file:
             conversation_history = json.load(file)
-            for entry in conversation_history:
+        with open('./src/now_conversation.json', 'r') as file:
+            now_conversation = json.load(file)
+            for entry in now_conversation:
                 chat_window.insert(tk.END, f"{entry['role']}: {entry['content']}\n")
     except FileNotFoundError:
         conversation_history = []
@@ -174,6 +176,7 @@ def get_response(prompt):
         
         # 將用戶的輸入加入對話歷史
         conversation_history.append({'role': 'user', 'content': prompt})
+        now_conversation.append({'role': 'user', 'content': prompt})
         save_conversation_history()
 
         async def run_fetch():
@@ -335,6 +338,7 @@ def send_message(user_input):
 
         # 將 GPT 回覆保存到記憶變量
         conversation_history.append({'role': 'assistant', 'content': message_content})
+        now_conversation.append({'role': 'user', 'content': user_input})
         
         # 儲存到文件
         save_conversation_history()

@@ -32,22 +32,31 @@ generated_image = None
 
 # memory recorder
 conversation_history = []
+now_conversation = []
 
 
 def load_conversation_history():
+    global now_conversation
     global conversation_history
     try:
-        with open('./src/conversation_history.json', 'r') as file:
+        # with open('./src/conversation_history.json', 'r') as file:
+        #     conversation_history = json.load(file)
+        #     for entry in conversation_history:
+        #         chat_window.insert(tk.END, f"{entry['role']}: {entry['content']}\n")
+        with open('./src/conversation.json', 'r') as file:
             conversation_history = json.load(file)
             for entry in conversation_history:
                 chat_window.insert(tk.END, f"{entry['role']}: {entry['content']}\n")
     except FileNotFoundError:
         conversation_history = []
 
+
 # 在每次有新對話後保存記錄
 def save_conversation_history():
     with open('./src/conversation_history.json', 'w') as file:
         json.dump(conversation_history, file)
+    with open('./src/now_conversation.json', 'w') as file:
+        json.dump(now_conversation, file)
 
 def analyze_image(image_path):
     """使用 Google Cloud Vision API 分析圖片，並返回描述。"""
@@ -201,10 +210,10 @@ def get_response(prompt):
 def delete_memory():
     """刪除聊天紀錄的 JSON 檔案。"""
     try:
-        if os.path.exists('./src/conversation_history.json'):
-            os.remove('./src/conversation_history.json')
-            global conversation_history
-            conversation_history = []  # 清空內存中的對話歷史
+        if os.path.exists('./src/now_conversation.json'):
+            os.remove('./src/now_conversation.json')
+            global now_conversation
+            now_conversation = []  # 清空內存中的對話歷史
             print("聊天紀錄已成功刪除。")
             # 清空聊天視窗中的內容
             chat_window.config(state=tk.NORMAL)  # 解鎖聊天窗口使其可編輯
@@ -326,7 +335,7 @@ def send_message(user_input):
 
         # 將 GPT 回覆保存到記憶變量
         conversation_history.append({'role': 'assistant', 'content': message_content})
-
+        
         # 儲存到文件
         save_conversation_history()
         speak_async(message_content)
